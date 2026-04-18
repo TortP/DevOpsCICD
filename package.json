@@ -1,0 +1,16 @@
+{
+  "name": "lesson-5",
+  "version": "1.0.0",
+  "description": "This project creates AWS infrastructure with Terraform modules:\r 1. Remote state backend (S3 + DynamoDB lock table)\r 2. Network layer (VPC with public and private subnets)\r 3. Container registry (ECR)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@jahed/terraform": "^1.14.8"
+  }
+}
