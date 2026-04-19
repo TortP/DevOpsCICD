@@ -10,7 +10,7 @@ resource "aws_vpc" "this" {
 
   tags = merge(var.tags, {
     Name        = var.vpc_name
-    Environment = "lesson-5"
+    Environment = "lesson-7"
     ManagedBy   = "Terraform"
   })
 }
@@ -26,9 +26,12 @@ resource "aws_subnet" "public" {
   tags = merge(var.tags, {
     Name        = "${var.vpc_name}-public-${tonumber(each.key) + 1}"
     Tier        = "public"
-    Environment = "lesson-5"
+    Environment = "lesson-7"
     ManagedBy   = "Terraform"
-  })
+    }, var.kubernetes_cluster_name != "" ? {
+    "kubernetes.io/cluster/${var.kubernetes_cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                               = "1"
+  } : {})
 }
 
 resource "aws_subnet" "private" {
@@ -41,9 +44,12 @@ resource "aws_subnet" "private" {
   tags = merge(var.tags, {
     Name        = "${var.vpc_name}-private-${tonumber(each.key) + 1}"
     Tier        = "private"
-    Environment = "lesson-5"
+    Environment = "lesson-7"
     ManagedBy   = "Terraform"
-  })
+    }, var.kubernetes_cluster_name != "" ? {
+    "kubernetes.io/cluster/${var.kubernetes_cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"                      = "1"
+  } : {})
 }
 
 resource "aws_internet_gateway" "this" {
@@ -51,7 +57,7 @@ resource "aws_internet_gateway" "this" {
 
   tags = merge(var.tags, {
     Name        = "${var.vpc_name}-igw"
-    Environment = "lesson-5"
+    Environment = "lesson-7"
     ManagedBy   = "Terraform"
   })
 }
@@ -61,7 +67,7 @@ resource "aws_eip" "nat" {
 
   tags = merge(var.tags, {
     Name        = "${var.vpc_name}-nat-eip"
-    Environment = "lesson-5"
+    Environment = "lesson-7"
     ManagedBy   = "Terraform"
   })
 }
@@ -74,7 +80,7 @@ resource "aws_nat_gateway" "this" {
 
   tags = merge(var.tags, {
     Name        = "${var.vpc_name}-nat"
-    Environment = "lesson-5"
+    Environment = "lesson-7"
     ManagedBy   = "Terraform"
   })
 }

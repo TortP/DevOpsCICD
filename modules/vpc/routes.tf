@@ -3,7 +3,7 @@ resource "aws_route_table" "public" {
 
   tags = merge(var.tags, {
     Name        = "${var.vpc_name}-public-rt"
-    Environment = "lesson-5"
+    Environment = "lesson-7"
     ManagedBy   = "Terraform"
   })
 }
@@ -26,7 +26,7 @@ resource "aws_route_table" "private" {
 
   tags = merge(var.tags, {
     Name        = "${var.vpc_name}-private-rt"
-    Environment = "lesson-5"
+    Environment = "lesson-7"
     ManagedBy   = "Terraform"
   })
 }

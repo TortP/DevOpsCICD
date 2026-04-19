@@ -32,7 +32,7 @@ resource "aws_ecr_repository" "this" {
 
   tags = merge(var.tags, {
     Name        = var.ecr_name
-    Environment = "lesson-5"
+    Environment = "lesson-7"
     ManagedBy   = "Terraform"
   })
 }
@@ -40,4 +40,25 @@ resource "aws_ecr_repository" "this" {
 resource "aws_ecr_repository_policy" "this" {
   repository = aws_ecr_repository.this.name
   policy     = data.aws_iam_policy_document.repository_policy.json
+}
+
+resource "aws_ecr_lifecycle_policy" "this" {
+  repository = aws_ecr_repository.this.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Expire old images and keep only the latest 20"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 20
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
 }

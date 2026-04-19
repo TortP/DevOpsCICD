@@ -1,0 +1,38 @@
+replicaCount: 2
+
+image:
+  repository: "768286545708.dkr.ecr.us-west-2.amazonaws.com/woolf-goit-app-ecr-usw2"
+  tag: "v1.0.0"
+  pullPolicy: IfNotPresent
+
+containerPort: 8000
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+config:
+  env:
+    DEBUG: "False"
+    DJANGO_SETTINGS_MODULE: "config.settings"
+    ALLOWED_HOSTS: "*"
+    SECRET_KEY: "django-insecure-lesson7-7f3f0ca2a3b84f5ea5f1c2f8"
+    CSRF_TRUSTED_ORIGINS: "http://localhost,http://127.0.0.1"
+    PYTHONUNBUFFERED: "1"
+
+ingress:
+  enabled: false
+  className: nginx
+  host: django.lesson7.local
+  path: /
+  pathType: Prefix
+  tls: false
+  tlsSecretName: django-app-tls
+  clusterIssuer: letsencrypt-prod

@@ -38,6 +38,12 @@ variable "vpc_name" {
   type        = string
 }
 
+variable "kubernetes_cluster_name" {
+  description = "Optional EKS cluster name for subnet discovery tags"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Additional tags for resources"
   type        = map(string)

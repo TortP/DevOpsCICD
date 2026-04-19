@@ -15,7 +15,7 @@ provider "aws" {
 
 locals {
   common_tags = {
-    Project     = "woolf-goit-lesson5"
+    Project     = "woolf-goit-lesson7"
     Environment = "dev"
     Region      = "us-west-2"
     ManagedBy   = "Terraform"
@@ -32,13 +32,14 @@ module "s3_backend" {
 
 # VPC with 3 public and 3 private subnets.
 module "vpc" {
-  source             = "./modules/vpc"
-  vpc_cidr_block     = "10.0.0.0/16"
-  public_subnets     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  private_subnets    = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
-  availability_zones = ["us-west-2a", "us-west-2b", "us-west-2c"]
-  vpc_name           = "woolf-goit-vpc-usw2"
-  tags               = local.common_tags
+  source                  = "./modules/vpc"
+  vpc_cidr_block          = "10.0.0.0/16"
+  public_subnets          = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  private_subnets         = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
+  availability_zones      = ["us-west-2a", "us-west-2b", "us-west-2c"]
+  vpc_name                = "woolf-goit-vpc-usw2"
+  kubernetes_cluster_name = "woolf-goit-eks-usw2"
+  tags                    = local.common_tags
 }
 
 # ECR repository for Docker images.
@@ -47,4 +48,18 @@ module "ecr" {
   ecr_name     = "woolf-goit-app-ecr-usw2"
   scan_on_push = true
   tags         = local.common_tags
+}
+
+# EKS cluster and managed node group in existing VPC private subnets.
+module "eks" {
+  source             = "./modules/eks"
+  cluster_name       = "woolf-goit-eks-usw2"
+  kubernetes_version = "1.29"
+  subnet_ids         = module.vpc.private_subnet_ids
+  node_group_name    = "woolf-goit-ng"
+  instance_types     = ["t3.medium"]
+  desired_size       = 2
+  min_size           = 2
+  max_size           = 4
+  tags               = local.common_tags
 }
