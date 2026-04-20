@@ -54,7 +54,7 @@ module "ecr" {
 module "eks" {
   source             = "./modules/eks"
   cluster_name       = "woolf-goit-eks-usw2"
-  kubernetes_version = "1.29"
+  kubernetes_version = "1.31"
   subnet_ids         = module.vpc.private_subnet_ids
   node_group_name    = "woolf-goit-ng"
   instance_types     = ["t3.medium"]

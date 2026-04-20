@@ -86,14 +86,14 @@ kubectl get nodes
 ```
 
 ### 5. Build and push Django image to ECR
-Account: `768286545708`, image tag: `v1.0.0`.
+Account: `<AWS_ACCOUNT_ID>`, image tag: `v1.0.0`.
 
 ```bash
-aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 768286545708.dkr.ecr.us-west-2.amazonaws.com
+aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com
 
 docker build -t woolf-goit-app-ecr-usw2:v1.0.0 .
-docker tag woolf-goit-app-ecr-usw2:v1.0.0 768286545708.dkr.ecr.us-west-2.amazonaws.com/woolf-goit-app-ecr-usw2:v1.0.0
-docker push 768286545708.dkr.ecr.us-west-2.amazonaws.com/woolf-goit-app-ecr-usw2:v1.0.0
+docker tag woolf-goit-app-ecr-usw2:v1.0.0 <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/woolf-goit-app-ecr-usw2:v1.0.0
+docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/woolf-goit-app-ecr-usw2:v1.0.0
 ```
 
 ### 6. Verify Helm chart before deploy
