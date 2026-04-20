@@ -1,0 +1,53 @@
+controller:
+  serviceType: LoadBalancer
+  installPlugins:
+    - kubernetes:4306.vc91e951ea_eb_d
+    - workflow-aggregator:596.v8c21c963d92d
+    - git:5.5.2
+    - configuration-as-code:1932.v75cb_b_f1b_698d
+    - pipeline-utility-steps:2.18.0
+    - aws-credentials:231.v08a_59f17d742
+  JCasC:
+    defaultConfig: true
+    configScripts:
+      kubernetes-cloud: |
+        jenkins:
+          numExecutors: 0
+          clouds:
+            - kubernetes:
+                name: "kubernetes"
+                namespace: "jenkins"
+                jenkinsUrl: "http://jenkins.jenkins.svc.cluster.local:8080"
+                jenkinsTunnel: "jenkins-agent.jenkins.svc.cluster.local:50000"
+                templates:
+                  - name: "kaniko"
+                    namespace: "jenkins"
+                    label: "kaniko"
+                    serviceAccount: "default"
+                    containers:
+                      - name: "jnlp"
+                        image: "jenkins/inbound-agent:3273.v4cfe589b_fd83-1"
+                        workingDir: "/home/jenkins/agent"
+                      - name: "kaniko"
+                        image: "gcr.io/kaniko-project/executor:v1.23.2-debug"
+                        command: "/busybox/cat"
+                        ttyEnabled: true
+                      - name: "git"
+                        image: "alpine/git:2.45.2"
+                        command: "cat"
+                        ttyEnabled: true
+agent:
+  enabled: true
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+rbac:
+  readSecrets: true
+persistence:
+  enabled: false
+serviceAccount:
+  create: true

@@ -1,0 +1,25 @@
+{{- range .Values.applications }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .name }}
+  namespace: {{ .namespace }}
+spec:
+  project: {{ .project | default "default" }}
+  source:
+    repoURL: {{ .sourceRepoURL }}
+    targetRevision: {{ .targetRevision | default "main" }}
+    path: {{ .sourcePath }}
+    helm:
+      releaseName: {{ .name }}
+  destination:
+    server: {{ .destination.server | default "https://kubernetes.default.svc" }}
+    namespace: {{ .destination.namespace }}
+  syncPolicy:
+    automated:
+      prune: {{ .syncPolicy.automated.prune | default true }}
+      selfHeal: {{ .syncPolicy.automated.selfHeal | default true }}
+    syncOptions:
+{{ toYaml (.syncPolicy.syncOptions | default (list "CreateNamespace=true")) | indent 6 }}
+---
+{{- end }}

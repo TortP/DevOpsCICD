@@ -15,7 +15,7 @@ provider "aws" {
 
 locals {
   common_tags = {
-    Project     = "woolf-goit-lesson7"
+    Project     = "woolf-goit-lesson-8-9"
     Environment = "dev"
     Region      = "us-west-2"
     ManagedBy   = "Terraform"
@@ -54,7 +54,7 @@ module "ecr" {
 module "eks" {
   source             = "./modules/eks"
   cluster_name       = "woolf-goit-eks-usw2"
-  kubernetes_version = "1.29"
+  kubernetes_version = "1.31"
   subnet_ids         = module.vpc.private_subnet_ids
   node_group_name    = "woolf-goit-ng"
   instance_types     = ["t3.medium"]
@@ -62,4 +62,21 @@ module "eks" {
   min_size           = 2
   max_size           = 4
   tags               = local.common_tags
+}
+
+# Jenkins installed via Helm to run CI pipeline in-cluster.
+module "jenkins" {
+  source       = "./modules/jenkins"
+  cluster_name = module.eks.cluster_name
+}
+
+# Argo CD installed via Helm for GitOps CD sync.
+module "argo_cd" {
+  source              = "./modules/argo_cd"
+  cluster_name        = module.eks.cluster_name
+  app_repo_url        = "https://github.com/YOUR_GITHUB_USERNAME/lesson-8-9.git"
+  app_target_revision = "main"
+  app_chart_path      = "charts/django-app"
+  app_namespace       = "django"
+  app_release_name    = "django-app"
 }
