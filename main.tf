@@ -74,7 +74,7 @@ module "jenkins" {
 module "argo_cd" {
   source              = "./modules/argo_cd"
   cluster_name        = module.eks.cluster_name
-  app_repo_url        = "https://github.com/YOUR_GITHUB_USERNAME/lesson-8-9.git"
+  app_repo_url        = "https://github.com/TortP/DevOpsCICD.git"
   app_target_revision = "main"
   app_chart_path      = "charts/django-app"
   app_namespace       = "django"

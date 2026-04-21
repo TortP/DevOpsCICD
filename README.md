@@ -51,7 +51,7 @@ terraform init -reconfigure -migrate-state
 Before `apply`, update this value in `main.tf`:
 - `module.argo_cd.app_repo_url`
 	with your real Git URL, for example:
-	`https://github.com/<username>/lesson-8-9.git`
+	`https://github.com/<username>/<reponame>.git`
 
 Run:
 ```bash

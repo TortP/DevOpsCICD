@@ -6,6 +6,7 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
+  serviceAccountName: jenkins
   containers:
     - name: jnlp
       image: jenkins/inbound-agent:3273.v4cfe589b_fd83-1
@@ -14,10 +15,18 @@ spec:
       image: gcr.io/kaniko-project/executor:v1.23.2-debug
       command: ['/busybox/cat']
       tty: true
+      volumeMounts:
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
+          readOnly: true
     - name: git
       image: alpine/git:2.45.2
       command: ['cat']
       tty: true
+  volumes:
+    - name: kaniko-docker-config
+      secret:
+        secretName: kaniko-secret
 '''
     }
   }
@@ -29,8 +38,8 @@ spec:
 
   environment {
     AWS_REGION = 'us-west-2'
-    ECR_REPOSITORY = '<AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/woolf-goit-app-ecr-usw2'
-    GITOPS_REPOSITORY = 'github.com/YOUR_GITHUB_USERNAME/lesson-8-9.git'
+    ECR_REPOSITORY = '768286545708.dkr.ecr.us-west-2.amazonaws.com/woolf-goit-app-ecr-usw2'
+    GITOPS_REPOSITORY = 'github.com/TortP/DevOpsCICD.git'
     GITOPS_BRANCH = 'main'
     HELM_VALUES_PATH = 'charts/django-app/values.yaml'
   }
@@ -93,7 +102,7 @@ if git diff --cached --quiet; then
   exit 0
 fi
 
-git commit -m "ci: update django image tag to ${IMAGE_TAG}"
+git commit -m "ci: update django image tag to ${IMAGE_TAG} [skip ci]"
 git push origin "HEAD:${GITOPS_BRANCH}"
 '''
           }
