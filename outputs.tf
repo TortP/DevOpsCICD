@@ -47,3 +47,23 @@ output "kubectl_configure_command" {
   description = "Command to configure kubectl access to EKS"
   value       = "aws eks update-kubeconfig --region us-west-2 --name ${module.eks.cluster_name}"
 }
+
+output "jenkins_namespace" {
+  description = "Namespace where Jenkins is installed"
+  value       = module.jenkins.namespace
+}
+
+output "jenkins_admin_password_command" {
+  description = "Command to get Jenkins initial admin password"
+  value       = module.jenkins.admin_password_command
+}
+
+output "argo_cd_namespace" {
+  description = "Namespace where Argo CD is installed"
+  value       = module.argo_cd.namespace
+}
+
+output "argo_cd_initial_admin_password_command" {
+  description = "Command to get Argo CD initial admin password"
+  value       = module.argo_cd.initial_admin_password_command
+}

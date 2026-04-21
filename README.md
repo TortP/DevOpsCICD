@@ -1,165 +1,138 @@
-# Lesson 7: Terraform + EKS + Helm
+# Lesson 8-9: Jenkins + Terraform + Helm + Argo CD (Full CI/CD)
 
 ## Goal
-This project provisions AWS infrastructure and deploys a Django application to Kubernetes with Helm:
-1. Remote state backend (S3 + DynamoDB)
-2. VPC network (public/private subnets)
-3. ECR repository for Docker image
-4. EKS cluster with managed node group
-5. Helm chart with Deployment, Service, ConfigMap, HPA, and optional Ingress + TLS
+Implement a full GitOps CI/CD flow for a Django application on AWS EKS:
+1. Jenkins automatically builds a Docker image.
+2. Jenkins pushes the image to Amazon ECR.
+3. Jenkins updates `image.tag` in Helm values in Git.
+4. Argo CD tracks Git and automatically syncs the application to the cluster.
 
-## Project structure
-```text
-lesson-7/
-|
-|-- main.tf
-|-- backend.tf
-|-- outputs.tf
-|-- modules/
-|   |-- s3-backend/
-|   |-- vpc/
-|   |-- ecr/
-|   `-- eks/
-|       |-- eks.tf
-|       |-- variables.tf
-|       `-- outputs.tf
-`-- charts/
-		`-- django-app/
-				|-- Chart.yaml
-				|-- values.yaml
-				`-- templates/
-						|-- deployment.yaml
-						|-- service.yaml
-						|-- configmap.yaml
-						|-- hpa.yaml
-						`-- ingress.yaml
+## What is implemented in this repository
+- Terraform modules for: `s3-backend`, `vpc`, `ecr`, `eks`, `jenkins`, `argo_cd`.
+- Jenkins is installed via Helm (`modules/jenkins`).
+- Argo CD is installed via Helm (`modules/argo_cd`).
+- Argo CD Application is created by a dedicated Helm chart (`modules/argo_cd/charts/argo-apps`).
+- Jenkins pipeline (`Jenkinsfile`) performs build/push/update-values/git-push.
+
+## CI/CD Diagram
+```mermaid
+flowchart LR
+	A[Developer push to main] --> B[Jenkins Pipeline]
+	B --> C[Build Docker image with Kaniko]
+	C --> D[Push image to Amazon ECR]
+	D --> E[Update charts/django-app/values.yaml image.tag]
+	E --> F[Git push to main]
+	F --> G[Argo CD detects Git change]
+	G --> H[Argo CD sync]
+	H --> I[Django app updated in EKS]
 ```
 
 ## Prerequisites
 - Terraform >= 1.5
-- AWS CLI configured (`aws configure`)
-- Docker
-- kubectl
+- AWS CLI (`aws configure`)
+- `kubectl`
 - Helm
+- GitHub repository for GitOps (this one or a separate repo)
 
-## Commands from scratch (full order)
+## How to Apply Terraform
 
-Run from project root (`lesson-7/`).
-
-### 0. Optional: verify tool versions
-```bash
-terraform -version
-aws --version
-docker --version
-kubectl version --client
-helm version
-```
-
-### 1. Bootstrap remote state backend (S3 + DynamoDB)
-This step is needed once for a new AWS account/region.
-
+### 1. Bootstrap Backend (one-time)
 ```bash
 terraform init -backend=false
 terraform apply -target=module.s3_backend -auto-approve
 ```
 
-### 2. Switch Terraform to remote backend
+### 2. Switch to Remote State
 ```bash
 terraform init -reconfigure -migrate-state
 ```
 
-### 3. Create core infrastructure (VPC + ECR + EKS)
+### 3. Full Infrastructure Deployment
+Before `apply`, update this value in `main.tf`:
+- `module.argo_cd.app_repo_url`
+	with your real Git URL, for example:
+	`https://github.com/<username>/<reponame>.git`
+
+Run:
 ```bash
 terraform plan
 terraform apply -auto-approve
 ```
 
-Useful outputs:
-- `ecr_repository_url`
-- `eks_cluster_name`
-- `kubectl_configure_command`
-
-### 4. Configure kubectl access to EKS
+### 4. Configure Cluster Access
 ```bash
 aws eks update-kubeconfig --region us-west-2 --name woolf-goit-eks-usw2
 kubectl get nodes
 ```
 
-### 5. Build and push Django image to ECR
-Account: `768286545708`, image tag: `v1.0.0`.
+## Jenkins: How to Verify the Job
 
+### 1. Get Jenkins URL
 ```bash
-aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 768286545708.dkr.ecr.us-west-2.amazonaws.com
+kubectl get svc -n jenkins
+```
+Service `jenkins` should get an `EXTERNAL-IP` (LoadBalancer).
 
-docker build -t woolf-goit-app-ecr-usw2:v1.0.0 .
-docker tag woolf-goit-app-ecr-usw2:v1.0.0 768286545708.dkr.ecr.us-west-2.amazonaws.com/woolf-goit-app-ecr-usw2:v1.0.0
-docker push 768286545708.dkr.ecr.us-west-2.amazonaws.com/woolf-goit-app-ecr-usw2:v1.0.0
+### 2. Get Admin Password
+```bash
+kubectl exec -n jenkins svc/jenkins -c jenkins -- cat /run/secrets/additional/chart-admin-password && echo
 ```
 
-### 6. Verify Helm chart before deploy
+### 3. Create a Pipeline Job
+In Jenkins:
+1. New Item -> Pipeline.
+2. Pipeline script from SCM -> Git.
+3. Set repository URL and branch `main`.
+4. Script Path: `Jenkinsfile`.
+
+### 4. Create Credentials in Jenkins
+Required credentials:
+1. `aws-creds` (type: AWS Credentials) for ECR push.
+2. `git-token` (type: Secret text) for Git push.
+
+### 5. Verify Successful Build
+Build Log should include stages:
+1. `Checkout source`
+2. `Build and push image to ECR`
+3. `Update Helm values and push to main`
+
+After successful job, verify with:
 ```bash
-helm lint ./charts/django-app
-helm template django-app ./charts/django-app > $null
+git log --oneline -n 3
+```
+The latest commit should include a message like:
+`ci: update django image tag to ...`
+
+## Argo CD: How to Verify the Result
+
+### 1. Check Argo CD Resources
+```bash
+kubectl get pods -n argocd
+kubectl get svc -n argocd
 ```
 
-### 7. Deploy app with Helm
+### 2. Get Initial Admin Password
 ```bash
-helm upgrade --install django-app ./charts/django-app -n django --create-namespace
+kubectl -n argocd get secret argo-cd-argocd-initial-admin-secret -o jsonpath={.data.password} | base64 --decode; echo
+```
+
+### 3. Open Argo CD UI
+Use `EXTERNAL-IP` of service `argo-cd-argocd-server`.
+
+### 4. Verify Auto-Sync
+After Jenkins commits the new tag:
+1. Application `django-app` should become `Synced` and `Healthy`.
+2. Updated Deployment should appear in namespace `django`.
+
+CLI verification:
+```bash
+kubectl get applications -n argocd
 kubectl get deploy,po,svc,hpa -n django
 ```
 
-### 8. Post-deploy checks (acceptance)
-```bash
-kubectl describe deployment django-app-django-app -n django
-kubectl get configmap django-app-config -n django -o yaml
-kubectl get svc django-app-django-app -n django
-kubectl get hpa django-app-django-app -n django
-```
+## Important Files
+- `Jenkinsfile` - CI pipeline (Kaniko + ECR + update Helm values).
+- `modules/jenkins/values.yaml` - Jenkins Helm values + Kubernetes agent config.
+- `modules/argo_cd/argo_cd.tf` - Helm install for Argo CD + Argo applications chart.
+- `modules/argo_cd/charts/argo-apps/templates/application.yaml` - Argo CD Application manifest template.
 
-If Service type `LoadBalancer` is still pending EXTERNAL-IP, wait 2-5 minutes and re-check:
-
-```bash
-kubectl get svc django-app-django-app -n django -w
-```
-
-### 9. Re-deploy after config/image changes
-```bash
-helm upgrade django-app ./charts/django-app -n django
-```
-
-### 10. Cleanup (optional)
-```bash
-helm uninstall django-app -n django
-terraform destroy -auto-approve
-```
-
-The chart implements:
-- Deployment with `envFrom` from ConfigMap
-- Service of type `LoadBalancer`
-- HPA from 2 to 6 replicas with CPU target 70%
-- ConfigMap for application environment variables
-
-## ConfigMap environment variables
-Set your application env values in:
-`charts/django-app/values.yaml` -> `config.env`
-
-## Bonus: Ingress + TLS
-Enable in `charts/django-app/values.yaml`:
-```yaml
-ingress:
-  enabled: true
-  className: nginx
-  host: django.lesson7.local
-  path: /
-  pathType: Prefix
-  tls: true
-  clusterIssuer: letsencrypt-prod
-```
-
-Install cert-manager and ingress controller beforehand.
-
-## Acceptance checklist
-1. EKS cluster is created and nodes are Ready.
-2. ECR repository exists and contains Django image.
-3. Deployment, Service and HPA are deployed with Helm.
-4. ConfigMap is mounted via `envFrom` in Deployment.
