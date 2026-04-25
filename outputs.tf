@@ -67,3 +67,28 @@ output "argo_cd_initial_admin_password_command" {
   description = "Command to get Argo CD initial admin password"
   value       = module.argo_cd.initial_admin_password_command
 }
+
+output "db_identifier" {
+  description = "RDS instance ID or Aurora cluster ID"
+  value       = module.rds.db_identifier
+}
+
+output "db_endpoint" {
+  description = "Database endpoint"
+  value       = module.rds.db_endpoint
+}
+
+output "db_port" {
+  description = "Database port"
+  value       = module.rds.db_port
+}
+
+output "db_engine" {
+  description = "Database engine in use"
+  value       = module.rds.db_engine
+}
+
+output "is_aurora" {
+  description = "Whether Aurora mode is enabled"
+  value       = module.rds.is_aurora
+}

@@ -42,6 +42,27 @@ module "vpc" {
   tags                    = local.common_tags
 }
 
+# Flexible DB module: regular RDS or Aurora based on use_aurora flag.
+module "rds" {
+  source              = "./modules/rds"
+  name_prefix         = "woolf-goit-db-usw2"
+  vpc_id              = module.vpc.vpc_id
+  subnet_ids          = module.vpc.private_subnet_ids
+  allowed_cidr_blocks = ["10.0.0.0/16"]
+
+  use_aurora     = false
+  engine         = "postgres"
+  engine_version = "16.3"
+  instance_class = "db.t3.micro"
+  multi_az       = false
+
+  db_name         = "appdb"
+  master_username = "appuser"
+  master_password = var.db_master_password
+
+  tags = local.common_tags
+}
+
 # ECR repository for Docker images.
 module "ecr" {
   source       = "./modules/ecr"
