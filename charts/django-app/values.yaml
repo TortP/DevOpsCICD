@@ -1,0 +1,42 @@
+replicaCount: 2
+
+image:
+  repository: ""
+  tag: "v1.0.0"
+  pullPolicy: IfNotPresent
+
+containerPort: 8000
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+config:
+  env:
+    DEBUG: "False"
+    DJANGO_SETTINGS_MODULE: "config.settings"
+    ALLOWED_HOSTS: "*"
+    CSRF_TRUSTED_ORIGINS: "http://localhost,http://127.0.0.1"
+    PYTHONUNBUFFERED: "1"
+
+secret:
+  name: django-app-secret
+  key: SECRET_KEY
+  value: ""
+
+ingress:
+  enabled: false
+  className: nginx
+  host: django.lesson7.local
+  path: /
+  pathType: Prefix
+  tls: false
+  tlsSecretName: django-app-tls
+  clusterIssuer: letsencrypt-prod

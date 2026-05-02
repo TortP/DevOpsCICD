@@ -1,0 +1,11 @@
+grafana:
+  fullnameOverride: grafana
+  service:
+    type: ClusterIP
+
+prometheus:
+  service:
+    type: ClusterIP
+
+alertmanager:
+  enabled: true

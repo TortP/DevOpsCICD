@@ -1,0 +1,28 @@
+# Terraform local state and caches
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Terraform variable files with potential secrets
+*.tfvars
+*.tfvars.json
+
+# Terraform CLI config overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Terraform plan outputs
+*.tfplan
+
+# Node/npm artifacts (used for npm-based terraform wrapper)
+node_modules/
+
+# OS/editor artifacts
+.DS_Store
+Thumbs.db
